@@ -21,6 +21,8 @@ export const rootMixin = {
     disabledDates: null,
     availableDates: null,
     theme: null,
+    minTime: { type: String, default: null },
+    maxTime: { type: String, default: null },
   },
   computed: {
     $theme() {

@@ -67,6 +67,8 @@ export default {
               minuteIncrement: this.minuteIncrement,
               showBorder: !this.isTime,
               isDisabled: (this.isDateTime && !dp.isValid) || this.isDragging,
+              minTime: this.minTime,
+              maxTime: this.maxTime,
             },
             on: { input: p => this.onTimeInput(p, idx === 0) },
           }),

@@ -34,7 +34,7 @@
       <div class="vc-time">
         <time-select v-model.number="hours" :options="hourOptions" />
         <span style="margin: 0 4px;">:</span>
-        <time-select v-model.number="minutes" :options="minuteOptions" />
+        <time-select v-model.number="minutes" :options="minuteOptions" :disabled="!isValidHour" />
         <div
           v-if="!is24hr"
           class="vc-am-pm"
@@ -44,6 +44,7 @@
             :class="{ active: isAM }"
             @click.prevent="isAM = true"
             type="button"
+            :disabled="!selectAm"
           >
             AM
           </button>
@@ -51,6 +52,7 @@
             :class="{ active: !isAM }"
             @click.prevent="isAM = false"
             type="button"
+            :disabled="!selectPm"
           >
             PM
           </button>
@@ -75,6 +77,8 @@ export default {
     minuteIncrement: { type: Number, default: 1 },
     showBorder: Boolean,
     isDisabled: Boolean,
+    minTime: { type: String, default: null },
+    maxTime: { type: String, default: null },
   },
   data() {
     return {
@@ -91,56 +95,78 @@ export default {
       }
       return date;
     },
+    maxHour() {
+      return this.locale.parse(this.maxTime || '23:59', 'HH:mm').getHours();
+    },
+    minHour() {
+      return this.locale.parse(this.minTime || '00:00', 'HH:mm').getHours();
+    },
+    isValidHour() {
+      return this.hours >= this.minHourByFormat() && this.hours <= this.maxHourByFormat();
+    },
+    selectAm() {
+      return this.minHour <= 12;
+    },
+    selectPm() {
+      return this.maxHour >= 12;
+    },
+    maxMinute() {
+      return this.locale.parse(this.maxTime || '23:59', 'HH:mm').getMinutes();
+    },
+    minMinute() {
+      return this.locale.parse(this.minTime || '00:00', 'HH:mm').getMinutes();
+    },
     hourOptions() {
-      const options12 = [
-        { value: 0, label: '12' },
-        { value: 1, label: '1' },
-        { value: 2, label: '2' },
-        { value: 3, label: '3' },
-        { value: 4, label: '4' },
-        { value: 5, label: '5' },
-        { value: 6, label: '6' },
-        { value: 7, label: '7' },
-        { value: 8, label: '8' },
-        { value: 9, label: '9' },
-        { value: 10, label: '10' },
-        { value: 11, label: '11' },
-      ];
-      const options24 = [
-        { value: 0, label: '00' },
-        { value: 1, label: '01' },
-        { value: 2, label: '02' },
-        { value: 3, label: '03' },
-        { value: 4, label: '04' },
-        { value: 5, label: '05' },
-        { value: 6, label: '06' },
-        { value: 7, label: '07' },
-        { value: 8, label: '08' },
-        { value: 9, label: '09' },
-        { value: 10, label: '10' },
-        { value: 11, label: '11' },
-        { value: 12, label: '12' },
-        { value: 13, label: '13' },
-        { value: 14, label: '14' },
-        { value: 15, label: '15' },
-        { value: 16, label: '16' },
-        { value: 17, label: '17' },
-        { value: 18, label: '18' },
-        { value: 19, label: '19' },
-        { value: 20, label: '20' },
-        { value: 21, label: '21' },
-        { value: 22, label: '22' },
-        { value: 23, label: '23' },
-      ];
+      const options = [];
+      const minHour = this.minHourByFormat();
+      const maxHour = this.maxHourByFormat();
 
-      if (this.is24hr) return options24;
-      return options12;
+      if (this.hours < minHour) {
+        options.push({
+          value: this.hours,
+          label: pad(this.hours === 0 && !this.is24hr ? 12 : this.hours, 2),
+          disabled: true,
+        });
+      }
+
+      for (let i = minHour; i <= maxHour; i++) {
+        options.push({
+          value: i,
+          label: pad(i === 0 && !this.is24hr ? 12 : i, 2, 0)
+        });
+      }
+
+      if (this.hours > maxHour) {
+        options.push({
+          value: this.hours,
+          label: pad(this.hours === 0 && !this.is24hr ? 12 : this.hours, 2),
+          disabled: true,
+        });
+      }
+
+      return options;
     },
     minuteOptions() {
       const options = [];
       let m = 0;
       let added = false;
-      while (m <= 59) {
+      let minutes = 59;
+
+      if (this.hours === this.minHourByFormat()) {
+        m = this.minMinute;
+        if (m > this.minutes) {
+          added = true;
+          options.push({
+            value: this.minutes,
+            label: pad(this.minutes, 2),
+            disabled: true,
+          });
+        }
+      } else if (this.hours === this.maxHourByFormat()) {
+        minutes = this.maxMinute;
+      }
+
+      while (m <= minutes) {
         options.push({
           value: m,
           label: pad(m, 2),
@@ -157,6 +183,17 @@ export default {
           });
         }
       }
+
+      if (this.hours === this.maxHourByFormat()) {
+        if (minutes < this.minutes) {
+          options.push({
+            value: this.minutes,
+            label: pad(this.minutes, 2),
+            disabled: true,
+          });
+        }
+      }
+
       return options;
     },
   },
@@ -213,6 +250,24 @@ export default {
         });
       });
     },
+    maxHourByFormat() {
+      if (this.is24hr) {
+        return this.maxHour;
+      }
+      if (this.isAM) {
+        return this.maxHour >= 12 ? 11 : this.maxHour;
+      }
+      return this.maxHour >= 12 ? this.maxHour - 12 : 0;
+    },
+    minHourByFormat() {
+      if (this.is24hr) {
+        return this.minHour;
+      }
+      if (this.isAM) {
+        return this.minHour >= 12 ? 0 : this.minHour;
+      }
+      return this.minHour >= 12 ? this.minHour - 12 : 0;
+    }
   },
 };
 </script>

@@ -27,42 +27,32 @@
     </style>
   </head>
   <body>
-    <noscript>
-      <strong
-        >We're sorry but v-calendar doesn't work properly without JavaScript
-        enabled. Please enable it to continue.</strong
-      >
-    </noscript>
     <div id="app">
-      <section>
-        <p>This uses the built version of the plugin</p>
-      </section>
-      <section>
-        <div class="selectors">
-          <label for="weeks">
-            <input id="weeks" type="checkbox" v-model="weeks" />
-            Show week numbers
-          </label>
-        </div>
-        <v-calendar :show-weeknumbers="weeks" :key="weeks" />
-      </section>
-      <section>
-        <div class="selectors">
-          <label for="single">
-            <input id="single" type="radio" value="single" v-model="mode" />
-            Single
-          </label>
-          <label for="multiple">
-            <input id="multiple" type="radio" value="multiple" v-model="mode" />
-            Multiple
-          </label>
-          <label for="range">
-            <input id="range" type="radio" value="range" v-model="mode" />
-            Range
-          </label>
-        </div>
-        <v-date-picker :mode="mode" v-model="date" />
-      </section>
+      <!-- <v-date-picker v-model="date" mode="time"> -->
+      <v-date-picker v-model="date" mode="datetime" min-time="'08:00'" max-time="'16:00'" :masks="masks" :is24hr="is24hr">
+        <template v-slot="{ inputValue, inputEvents }">
+          <input
+            class="px-2 py-1 border rounded focus:outline-none focus:border-blue-300"
+            :value="inputValue"
+            v-on="inputEvents"
+          />
+        </template>
+      </v-date-picker>
+      <br>
+      {{date}}
+      <br>
+      <br>
+      <v-date-picker v-model="date2" mode="datetime">
+        <template v-slot="{ inputValue, inputEvents }">
+          <input
+            class="px-2 py-1 border rounded focus:outline-none focus:border-blue-300"
+            :value="inputValue"
+            v-on="inputEvents"
+          />
+        </template>
+      </v-date-picker>
+      <br>
+      {{date2}}
     </div>
     <!-- built files will be auto injected -->
     <script type="text/javascript">
@@ -70,9 +60,13 @@
       el: '#app',
       data() {
         return {
-          mode: 'single',
-          weeks: false,
-          date: new Date()
+          date: new Date('2021-07-20 00:00:00'),
+          date2: new Date('2021-07-20 00:00:00'),
+          is24hr: true,
+          masks: {
+            inputDateTime: 'YYYY-MM-DD hh:mm A',
+            inputDateTime24hr: 'YYYY-MM-DD hh:mm A',
+          }
         }
       }
     })
